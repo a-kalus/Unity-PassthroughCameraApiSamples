@@ -2,25 +2,30 @@ using System.Collections;
 using UnityEngine;
 
 /// <summary>
-/// Runs the automatic target sequence, started with the B button:
+/// Runs the automatic target sequence:
 ///
-///   press B (right controller) -> sequence starts -> target spawns ->
-///   user points at it and presses the select button (see ControllerRayPointer)
-///   -> target is destroyed -> random pause (range below) -> next target
-///   spawns automatically, based on the head pose at that moment -> ...
+///   SetupDialog (UserID + condition) -> Start pressed on the dialog ->
+///   sequence starts (new CSV log session) -> target spawns -> user points at
+///   it and presses the select button (see ControllerRayPointer) -> target is
+///   destroyed -> random pause (range below) -> next target spawns
+///   automatically, based on the head pose at that moment -> ...
 ///
-/// Starting via button press (instead of on scene load) guarantees that head
-/// tracking is already running, so the first target uses a valid head pose
-/// and no longer spawns at floor level.
-/// The pause is measured from the actual destruction of the target GameObject
-/// (i.e. hit + Target.destroyDelayAfterHit).
+/// The B button (configurable below) reopens the setup dialog while no
+/// sequence is running, e.g. for the next participant. If no SetupDialog
+/// exists in the scene, B starts the sequence directly instead.
 /// </summary>
 public class DemoManager : MonoBehaviour
 {
     [SerializeField] private TargetSpawner spawner;
 
+    [Tooltip("Optional. Auto-resolved if a ResponseTimeLogger exists in the scene. Logging is skipped when empty.")]
+    [SerializeField] private ResponseTimeLogger logger;
+
+    [Tooltip("Optional. Auto-resolved if a SetupDialog exists in the scene. With a dialog, B reopens it; without, B starts the sequence directly.")]
+    [SerializeField] private SetupDialog setupDialog;
+
     [Header("Sequence")]
-    [Tooltip("Button that starts the sequence. 'Two' = B on the right controller. Presses while the sequence is already running are ignored.")]
+    [Tooltip("'Two' = B on the right controller. Reopens the setup dialog (or starts the sequence if no dialog exists). Ignored while a sequence is running.")]
     [SerializeField] private OVRInput.Button startButton = OVRInput.Button.Two;
 
     [Tooltip("Minimum pause between destruction of one target and spawn of the next, in seconds.")]
@@ -45,20 +50,38 @@ public class DemoManager : MonoBehaviour
     {
         if (spawner == null)
             spawner = FindFirstObjectByType<TargetSpawner>();
+        if (logger == null)
+            logger = FindFirstObjectByType<ResponseTimeLogger>();
+        if (setupDialog == null)
+            setupDialog = FindFirstObjectByType<SetupDialog>();
     }
 
     private void Update()
     {
-        // B starts the sequence. While it is running the button does nothing,
-        // so it can't accidentally despawn a target mid-run.
-        if (!SequenceRunning && OVRInput.GetDown(startButton, OVRInput.Controller.RTouch))
+        // Ignored while the sequence is running, so the button can't
+        // accidentally despawn a target mid-run.
+        if (SequenceRunning || !OVRInput.GetDown(startButton, OVRInput.Controller.RTouch))
+            return;
+
+        if (setupDialog != null)
+        {
+            if (!setupDialog.Visible)
+                setupDialog.Show();
+        }
+        else
+        {
             StartSequence();
+        }
     }
 
-    /// <summary>Starts the sequence. Also callable from your own code or UnityEvents.</summary>
+    /// <summary>Starts the sequence and a new log session. Called by the SetupDialog's Start button.</summary>
     public void StartSequence()
     {
         if (SequenceRunning || spawner == null) return;
+
+        if (logger != null)
+            logger.StartSession();
+
         sequenceRoutine = StartCoroutine(SequenceLoop());
     }
 
@@ -75,6 +98,8 @@ public class DemoManager : MonoBehaviour
 
     private IEnumerator SequenceLoop()
     {
+        float precedingPause = 0f;   // the first target spawns immediately on start
+
         while (true)
         {
             // Head pose is sampled inside SpawnTarget* right now, i.e. AFTER the
@@ -83,13 +108,24 @@ public class DemoManager : MonoBehaviour
             if (target == null)
                 yield break;
 
-            // Wait until the target GameObject has actually been destroyed.
-            // Only the ray pointer can do that: point at the target + select button.
+            Target t = target.GetComponentInChildren<Target>();
+
+            // Wait until the target is hit. At that moment its ReactionTime is
+            // known but the component still exists (feedback delay), so we can
+            // read and log it together with the pause that preceded this target.
+            yield return new WaitUntil(() => t == null || t.IsHit);
+
+            if (logger != null && t != null)
+                logger.LogTarget(t.ReactionTime, precedingPause);
+
+            // Now wait until the target GameObject has actually been destroyed
+            // (hit + Target.destroyDelayAfterHit) - the pause starts here.
             yield return new WaitUntil(() => target == null);
 
-            // Random inter-target pause; range is set in the inspector.
-            // The next target then spawns automatically at the top of the loop.
-            yield return new WaitForSeconds(Random.Range(minRespawnDelay, maxRespawnDelay));
+            // Random inter-target pause; range is set in the inspector. This value
+            // is logged as PrecedingPauseLength of the NEXT target.
+            precedingPause = Random.Range(minRespawnDelay, maxRespawnDelay);
+            yield return new WaitForSeconds(precedingPause);
         }
     }
 
@@ -100,4 +136,3 @@ public class DemoManager : MonoBehaviour
         minDegreesBeyondFov = Mathf.Max(0f, minDegreesBeyondFov);
     }
 }
-

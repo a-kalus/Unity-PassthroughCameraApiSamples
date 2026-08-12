@@ -356,6 +356,8 @@ GameObject:
   - component: {fileID: 334412212}
   - component: {fileID: 334412211}
   - component: {fileID: 334412215}
+  - component: {fileID: 334412216}
+  - component: {fileID: 334412217}
   m_Layer: 0
   m_Name: Task
   m_TagString: Untagged
@@ -376,6 +378,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DemoManager
   spawner: {fileID: 0}
+  logger: {fileID: 0}
+  setupDialog: {fileID: 0}
   startButton: 2
   minRespawnDelay: 0
   maxRespawnDelay: 5
@@ -451,6 +455,45 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::UsbStringSender
   host: 127.0.0.1
   port: 7777
+--- !u!114 &334412216
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 334412210}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f744be1465ffe0e498802265ddc6456e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ResponseTimeLogger
+  userId: P00
+  separator: ;
+--- !u!114 &334412217
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 334412210}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 377777f85e4d34e408c6738635190cbe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SetupDialog
+  head: {fileID: 0}
+  rayOrigin: {fileID: 0}
+  demoManager: {fileID: 0}
+  logger: {fileID: 0}
+  controller: 2
+  selectButton: 1
+  userIdPrefix: P
+  userNumber: 1
+  minUserNumber: 0
+  maxUserNumber: 999
+  conditionAName: Condition A
+  conditionBName: Condition B
+  distance: 1.2
 --- !u!1 &343815007
 GameObject:
   m_ObjectHideFlags: 0

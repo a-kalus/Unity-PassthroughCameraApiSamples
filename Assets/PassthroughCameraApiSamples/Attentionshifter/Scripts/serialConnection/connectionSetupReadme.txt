@@ -9,3 +9,5 @@ then Run: .\adb reverse tcp:7777 tcp:7777)
 4. Launch the app on the headset -> received strings appear in the Python window
 
 Note: step 3 must be repeated after every unplug/replug or headset reboot.
+
+log files are saved at Dieser PC\Quest 3\Internal shared storage\Android\data\com.samples.passthroughcamera\files

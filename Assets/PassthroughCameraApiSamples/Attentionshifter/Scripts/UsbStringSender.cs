@@ -59,15 +59,15 @@ public class USBStringSender : MonoBehaviour
     public void Init() => Send("0");     // Ping + Init, run this first
     public void MoveUp() => Send("1");     // Nach oben
     public void MoveDown() => Send("2");     // Nach unten
-    public void MoveLeft() => Send("3");     // Nach links
-    public void MoveRight() => Send("4");     // Nach rechts
+    public void MoveLeft() { Debug.Log("Move Left!");  Send("3"); }  // Nach links
+    public void MoveRight() { Debug.Log("Move Right!"); Send("4"); }     // Nach rechts
     public void MoveFront() => Send("5");     // Nach vorne
     public void MoveBack() => Send("6");     // Nach hinten
     public void Pause() => Send("pause"); // all motors to torque 0
 
     /// <summary>Sends any raw command string. Cheap: only enqueues,
     /// so it is safe to call every frame. '\n' is appended automatically.</summary>
-    public void Send(string command)
+    void Send(string command)
     {
         if (!_running)
         {

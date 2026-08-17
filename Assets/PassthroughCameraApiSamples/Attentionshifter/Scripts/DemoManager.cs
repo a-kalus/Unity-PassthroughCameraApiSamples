@@ -5,10 +5,11 @@ using UnityEngine;
 /// Runs the automatic target sequence:
 ///
 ///   SetupDialog (UserID + condition) -> Start pressed on the dialog ->
-///   sequence starts (new CSV log session) -> target spawns -> user points at
-///   it and presses the select button (see ControllerRayPointer) -> target is
-///   destroyed -> random pause (range below) -> next target spawns
-///   automatically, based on the head pose at that moment -> ...
+///   sequence starts (new CSV log session, bridge Init) -> target spawns
+///   (bridge MoveLeft/MoveRight cue depending on the spawn side) -> user
+///   points at it and presses the select button (see ControllerRayPointer)
+///   -> target is destroyed -> random pause (range below) -> next target
+///   spawns automatically, based on the head pose at that moment -> ...
 ///
 /// The B button (configurable below) reopens the setup dialog while no
 /// sequence is running, e.g. for the next participant. If no SetupDialog
@@ -23,6 +24,12 @@ public class DemoManager : MonoBehaviour
 
     [Tooltip("Optional. Auto-resolved if a SetupDialog exists in the scene. With a dialog, B reopens it; without, B starts the sequence directly.")]
     [SerializeField] private SetupDialog setupDialog;
+
+    [Tooltip("Optional. Auto-resolved if a USBStringSender exists in the scene. Init() is sent on sequence start; MoveLeft()/MoveRight() is sent at every target spawn depending on the side.")]
+    [SerializeField] private USBStringSender usbSender;
+
+    [Tooltip("Optional debug display. Auto-resolved if a DirectionDebugText exists in the scene; disable it with its own 'Show Debug Message' switch.")]
+    [SerializeField] private DebugDirectionHint directionDebugText;
 
     [Header("Sequence")]
     [Tooltip("'Two' = B on the right controller. Reopens the setup dialog (or starts the sequence if no dialog exists). Ignored while a sequence is running.")]
@@ -54,6 +61,10 @@ public class DemoManager : MonoBehaviour
             logger = FindFirstObjectByType<ResponseTimeLogger>();
         if (setupDialog == null)
             setupDialog = FindFirstObjectByType<SetupDialog>();
+        if (usbSender == null)
+            usbSender = FindFirstObjectByType<USBStringSender>();
+        if (directionDebugText == null)
+            directionDebugText = FindFirstObjectByType<DebugDirectionHint>();
     }
 
     private void Update()
@@ -82,6 +93,10 @@ public class DemoManager : MonoBehaviour
         if (logger != null)
             logger.StartSession();
 
+        // Ping + Init the bridge so it accepts the movement cues that follow.
+        if (usbSender != null)
+            usbSender.Init();
+
         sequenceRoutine = StartCoroutine(SequenceLoop());
     }
 
@@ -107,6 +122,20 @@ public class DemoManager : MonoBehaviour
             GameObject target = spawner.SpawnTargetOutsideFov(minDegreesBeyondFov, maxAngle);
             if (target == null)
                 yield break;
+
+            // Directional bridge cue: the sign of the spawn azimuth is the side
+            // (+ = right of the user, - = left of the user at spawn time).
+            if (usbSender != null && spawner.LastSpawnAzimuth != 0f)
+            {
+                if (spawner.LastSpawnAzimuth < 0f)
+                    usbSender.MoveLeft();
+                else
+                    usbSender.MoveRight();
+            }
+
+            // Debug display of the same direction (no-op while its switch is off).
+            if (directionDebugText != null)
+                directionDebugText.ShowForAzimuth(spawner.LastSpawnAzimuth);
 
             Target t = target.GetComponentInChildren<Target>();
 

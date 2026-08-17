@@ -32,6 +32,9 @@ public class TargetSpawner : MonoBehaviour
     /// <summary>The most recently spawned target that still exists (or null).</summary>
     public GameObject CurrentTarget { get; private set; }
 
+    /// <summary>Azimuth of the most recently spawned target, in degrees (+ = right, - = left of the user at spawn time).</summary>
+    public float LastSpawnAzimuth { get; private set; }
+
     private void Awake()
     {
         if (head == null && Camera.main != null)
@@ -69,6 +72,8 @@ public class TargetSpawner : MonoBehaviour
         Vector3 direction = gazeReference * Quaternion.Euler(-elevationDeg, azimuthDeg, 0f) * Vector3.forward;
         Vector3 position = head.position + direction * spawnDistance;
         Quaternion rotation = Quaternion.LookRotation(-direction, Vector3.up); // +Z of the target faces the user
+
+        LastSpawnAzimuth = azimuthDeg;
 
         DespawnCurrentTarget();
         CurrentTarget = CreateTargetInstance(position, rotation);
@@ -130,3 +135,5 @@ public class TargetSpawner : MonoBehaviour
         return go;
     }
 }
+
+

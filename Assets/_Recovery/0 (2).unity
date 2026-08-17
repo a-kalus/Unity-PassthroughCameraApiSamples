@@ -358,7 +358,6 @@ GameObject:
   - component: {fileID: 334412215}
   - component: {fileID: 334412216}
   - component: {fileID: 334412217}
-  - component: {fileID: 334412218}
   m_Layer: 0
   m_Name: Task
   m_TagString: Untagged
@@ -381,8 +380,6 @@ MonoBehaviour:
   spawner: {fileID: 0}
   logger: {fileID: 0}
   setupDialog: {fileID: 0}
-  usbSender: {fileID: 0}
-  directionDebugText: {fileID: 0}
   startButton: 2
   minRespawnDelay: 0
   maxRespawnDelay: 5
@@ -492,33 +489,13 @@ MonoBehaviour:
   logger: {fileID: 0}
   controller: 2
   selectButton: 1
-  userIdPrefix: PTest
+  userIdPrefix: P
   userNumber: 1
   minUserNumber: 0
   maxUserNumber: 999
   conditionAName: Condition A
   conditionBName: Condition B
   distance: 1.2
---- !u!114 &334412218
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 334412210}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0c38b5869249f8e4fa87679e38b4eeee, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DebugDirectionHint
-  showDebugMessage: 1
-  displayDuration: 1
-  distance: 1.5
-  verticalOffset: -0.25
-  leftColor: {r: 0.10196078, g: 0.7845286, b: 1, a: 1}
-  rightColor: {r: 0.3, g: 0.7, b: 1, a: 1}
-  followHead: 1
-  head: {fileID: 0}
 --- !u!1 &343815007
 GameObject:
   m_ObjectHideFlags: 0

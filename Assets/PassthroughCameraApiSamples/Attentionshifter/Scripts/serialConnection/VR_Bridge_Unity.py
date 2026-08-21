@@ -39,7 +39,7 @@ MASTER_PORT = "COM4"    # Port zum Master (Nucleo144)
 
 BAUD = 115200
 
-MOTORS = [1,3]
+MOTORS = [1,2,3,4]
 
 # Motor 1 - Links Oben
 # Motor 2 - Lift / kranial
@@ -109,8 +109,42 @@ def note(msg):
     print(f"{time.strftime('%H:%M:%S')}  {msg}")
 
 
-def mark_tx(motor_id):
-    state["last_tx"][motor_id] = time.time()
+def mark_tx(motor_id, hold_s=0.0):
+    """TX-Zeitpunkt merken. hold_s > 0 sperrt den Heartbeat fuer diese Zeit.
+
+    Grund: Der Master bricht bei JEDEM Nicht-Job-Befehl (auch PING) den
+    laufenden H./L.-Job ab (jobs[id].active = false), OHNE das Drehmoment
+    zu nullen. Ein Heartbeat waehrend eines Jobs killt also die Dauer und
+    der Motor zieht endlos weiter. Waehrend eines Jobs schickt der Master
+    ohnehin mit 50 Hz Torque-Werte an den Slave - der Slave-Watchdog wird
+    dadurch bedient, der Heartbeat ist in dieser Zeit ueberfluessig.
+    """
+    state["last_tx"][motor_id] = time.time() + hold_s
+
+
+def job_duration_s(line):
+    """Dauer eines H./L.-Jobs in Sekunden, sonst 0.0.
+    Parst exakt wie der Master (letzter Punkt trennt die Dauer ab)."""
+    body = line.split(":", 1)[-1].strip()
+
+    if not body.upper().startswith(("H.", "L.")):
+        return 0.0
+
+    last_dot = body.rfind(".")
+
+    if last_dot <= 2:
+        return 0.0
+
+    token = body[last_dot + 1:].strip().lower()
+
+    try:
+        if token.endswith("ms"):
+            return float(token[:-2]) / 1000.0
+        if token.endswith("s"):
+            return float(token[:-1])
+        return float(token) / 1000.0   # nackte Zahl = ms (wie im Master)
+    except ValueError:
+        return 0.0
 
 
 # ================= SERIAL-GRUNDFUNKTIONEN =================
@@ -127,10 +161,11 @@ def send_line(ser, line, log=True):
     ser.write((line + "\n").encode("utf-8"))
     ser.flush()
 
-    # TX an einen Motor merken (fuer Heartbeat)
+    # TX an einen Motor merken (fuer Heartbeat).
+    # Bei H./L.-Jobs zusaetzlich fuer die Job-Dauer sperren.
     prefix = line.split(":", 1)[0]
     if prefix.isdigit():
-        mark_tx(int(prefix))
+        mark_tx(int(prefix), job_duration_s(line))
 
 
 def read_line(ser, log=False):

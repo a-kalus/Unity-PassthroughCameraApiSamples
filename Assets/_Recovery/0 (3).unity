@@ -402,7 +402,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ControllerRayPointer
   rayOrigin: {fileID: 0}
   controller: 2
-  selectButton: 8192
+  selectButton: 1
   lineRenderer: {fileID: 0}
   maxRayLength: 20
   layerMask:

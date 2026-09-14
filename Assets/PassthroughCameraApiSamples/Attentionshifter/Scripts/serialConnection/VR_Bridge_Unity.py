@@ -10,7 +10,7 @@
 #
 # WICHTIG: Aenderungen an der COMMAND_MAP muessen in allen
 # Bridge-Dateien gemacht werden.
-#
+#0
 # Commands von Unity (identisch zu den Tasten):
 #   "0"      - Init
 #   "1".."6" - Bewegungen laut COMMAND_MAP
